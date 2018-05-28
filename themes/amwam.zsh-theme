@@ -4,21 +4,40 @@ function get_pwd() {
     print -D $PWD
 }
 
+YELLOW="\e[33m"
+END_COLOR="\033[0m"
+
 function get_git_commits() {
+    OUTPUT=""
     if git rev-parse --git-dir > /dev/null 2>&1; then
-        BRANCH=`current_branch`
-        REMOTE_COUNT=`git branch -vv | grep origin/${BRANCH} | wc -l | tr -d ' '`
+        CHANGED_FILE_COUNT=$(git status -s | wc -l | tr -d ' ')
+        if [ $CHANGED_FILE_COUNT -ne 0 ]; then
+            OUTPUT="${OUTPUT}${CHANGED_FILE_COUNT}"
+        fi
+
+
+        BRANCH=$(current_branch)
+
+        # Count the number of branches being tracked on teh remote
+        REMOTE_COUNT=$(git branch -vv | grep origin/${BRANCH} | grep -v gone\] | wc -l | tr -d ' ')
+
         if [ $REMOTE_COUNT -eq 0 ]; then
-            print ""
+
+            # Count the 'gone' branches (i.e. can't find on the server)
+            GONE_COUNT=$(git branch -vv | grep origin/${BRANCH} | grep  gone\] | wc -l | tr -d ' ')
+            if [ $GONE_COUNT -eq 1 ]; then
+                OUTPUT="${OUTPUT} [${YELLOW}gone${END_COLOR}]"
+            fi
+
         else
+            # Count the commits ahead and behind the current
             local ahead=$(git rev-list @{u}.. --count)
             local behind=$(git rev-list ..@{u} --count)
 
-            print " [A\033[92m${ahead}\033[0m, B\033[91m${behind}\033[0m]"
+            OUTPUT="${OUTPUT} [A\033[92m${ahead}\033[0m, B\033[91m${behind}${END_COLOR}]"
         fi
-    else
-        print ""
     fi
+    print "${OUTPUT}"
 }
 
 PROMPT='${ret_status}%{$fg_bold[green]%}%p %{$fg[cyan]%}$(get_pwd) %{$fg_bold[blue]%}$(git_prompt_info)$(get_git_commits)%{$fg_bold[blue]%} % %{$reset_color%} 
