@@ -35,7 +35,7 @@ function get_git_commits() {
             local behind=$(git rev-list ..@{u} --count)
             local master=$(git rev-list ..origin/master --count)
 
-            OUTPUT="${OUTPUT} [A\033[92m${ahead}\033[0m, B\033[91m${behind}${END_COLOR}, M${master}]"
+            OUTPUT="${OUTPUT} [A\033[92m${ahead}\033[0m, B\033[91m${behind}${END_COLOR}, M\033[93m${master}${END_COLOR}]"
         fi
     fi
     print "${OUTPUT}"
