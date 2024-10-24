@@ -10,7 +10,7 @@ END_COLOR="\033[0m"
 function get_git_commits() {
     OUTPUT=""
     if git rev-parse --git-dir > /dev/null 2>&1; then
-        CHANGED_FILE_COUNT=$(git status -s | wc -l | tr -d ' ')
+        CHANGED_FILE_COUNT=$(git status -s | wc -l | xargs)
         if [ $CHANGED_FILE_COUNT -ne 0 ]; then
             OUTPUT="${OUTPUT}${CHANGED_FILE_COUNT}"
         fi
@@ -19,12 +19,12 @@ function get_git_commits() {
         BRANCH=$(current_branch)
 
         # Count the number of branches being tracked on teh remote
-        REMOTE_COUNT=$(git branch -vv | grep origin/${BRANCH} | grep -v gone\] | wc -l | tr -d ' ')
+        REMOTE_COUNT=$(git for-each-ref --format="%(upstream:short)" refs/heads/${BRANCH} | wc -l | xargs)
 
         if [ $REMOTE_COUNT -eq 0 ]; then
 
-            # Count the 'gone' branches (i.e. can't find on the server)
-            GONE_COUNT=$(git branch -vv | grep origin/${BRANCH} | grep  gone\] | wc -l | tr -d ' ')
+            # Count the 'gone' branches (i.e. can't find on the server)
+            GONE_COUNT=$(git for-each-ref --format="%(upstream:track)" refs/heads/${BRANCH} | grep -c "\[gone\]")
             if [ $GONE_COUNT -eq 1 ]; then
                 OUTPUT="${OUTPUT} [${YELLOW}gone${END_COLOR}]"
             fi
